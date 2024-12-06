@@ -22,7 +22,6 @@ Le projet est organisé comme suit :
 honeypot-project/
 ├── frontend/       # Code source de l'interface utilisateur
 ├── backend/        # Code source de l'API
-├── database/       # Configuration de la base de données
 ├── docker-compose.yml  # Fichier de configuration Docker Compose
 ```
 
@@ -47,7 +46,7 @@ Cette commande :
 - Lance les trois services (frontend, backend, database).
 
 ### 3. Vérifier les services
-- Frontend : Disponible sur [http://localhost:3000](http://localhost:3000)
+- Frontend : Disponible sur [http://localhost:3001](http://localhost:3001)
 - Backend : Disponible sur [http://localhost:5000](http://localhost:5000)
 - Database : Accessible uniquement via le backend
 
@@ -55,7 +54,8 @@ Cette commande :
 
 ## Utilisation
 ### Accéder à l'interface utilisateur
-1. Ouvrez votre navigateur à l'adresse suivante : [http://localhost:3000](http://localhost:3000).
+1. Ouvrez votre navigateur à l'adresse suivante : [http://localhost:3001](http://localhost:3001).
+2. Connexion admin via username : admin, password : password
 2. Consultez le tableau de bord pour voir les logs des attaques.
 3. Les informations affichées incluent :
    - **Horodatage**
@@ -65,12 +65,10 @@ Cette commande :
 ### Simuler une attaque
 Pour tester le système, vous pouvez :
 1. Lancer des requêtes malveillantes simulées vers le backend à l'aide d'outils comme cURL ou Postman.
+- Exemple : curl -X POST http://127.0.0.1:5000/malicious-attack -d "attack_type=sql_injection"
 2. Les attaques seront détectées, enregistrées dans la base de données et affichées dans le frontend.
 
-Exemple de requête cURL :
-```bash
-curl -X POST http://localhost:5000/attack -d '{"ip_source": "192.168.1.1", "attack_type": "SQL Injection"}' -H "Content-Type: application/json"
-```
+Autre exemple lancer plusieurs requetes POST pendant 30 secondes, votre IP sera bloquée
 
 ---
 
@@ -130,6 +128,3 @@ Si vous souhaitez contribuer à ce projet :
 - **Personne 2** : Développement Frontend et Orchestration Docker.
 
 ---
-
-## Licence
-Ce projet est sous licence MIT. Consultez le fichier `LICENSE` pour plus d'informations.
