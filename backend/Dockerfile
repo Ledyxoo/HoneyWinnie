@@ -1,5 +1,5 @@
 # Utiliser une image Python comme base
-FROM python:3.9
+FROM python:latest
 
 # Installer les dépendances
 WORKDIR /app
