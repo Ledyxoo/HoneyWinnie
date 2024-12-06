@@ -70,6 +70,8 @@ Pour tester le système, vous pouvez :
 
 Autre exemple lancer plusieurs requetes POST pendant 30 secondes, votre IP sera bloquée
 
+![Attaque ddos](image.png)
+![Attaque ddos2](image-1.png)
 ---
 
 ## Gestion des services
