@@ -21,8 +21,8 @@ app.config['REMEMBER_COOKIE_DURATION'] = 60 * 60 * 24 * 7  # Durée du cookie "s
 
 # Configurer CORS pour permettre l'accès depuis http://127.0.0.1:3001
 CORS(app, resources={r"/auth/*": {"origins": "http://localhost:3001", "supports_credentials": True},
-                     r"/logs": {"origins": "http://localhost:3001", "supports_credentials": True}},
-     supports_credentials=True)
+                     r"/logs": {"origins": "http://localhost:3001", "supports_credentials": True},
+                     r"/logout": {"origins": "http://localhost:3001", "supports_credentials": True}}, supports_credentials=True)
 
 # Configurer SQLAlchemy
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'postgresql+psycopg://user:password@db:5432/honeypot_db')
