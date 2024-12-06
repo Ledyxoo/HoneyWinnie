@@ -5,7 +5,6 @@ from flask_sqlalchemy import SQLAlchemy
 
 # Initialiser l'extension SQLAlchemy (doit être lié à l'application principale)
 db = SQLAlchemy()
-
 # Initialiser le gestionnaire de connexion
 login_manager = LoginManager()
 login_manager.login_view = "auth.login"  # La vue de connexion est dans auth_bp
