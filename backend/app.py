@@ -16,12 +16,12 @@ app.secret_key = os.getenv('SECRET_KEY', 'your_secret_key')
 app.config['SESSION_COOKIE_NAME'] = 'session'
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SECURE'] = False  # Mettez à True si vous utilisez HTTPS
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # Permet le partage de cookies cross-origin
+app.config['SESSION_COOKIE_SAMESITE'] = 'None'  # Permet le partage de cookies cross-origin
 app.config['REMEMBER_COOKIE_DURATION'] = 60 * 60 * 24 * 7  # Durée du cookie "se souvenir de moi" (7 jours)
 
 # Configurer CORS pour permettre l'accès depuis http://127.0.0.1:3001
-CORS(app, resources={r"/auth/*": {"origins": "http://127.0.0.1:3001", "supports_credentials": True},
-                     r"/logs": {"origins": "http://127.0.0.1:3001", "supports_credentials": True}},
+CORS(app, resources={r"/auth/*": {"origins": "http://localhost:3001", "supports_credentials": True},
+                     r"/logs": {"origins": "http://localhost:3001", "supports_credentials": True}},
      supports_credentials=True)
 
 # Configurer SQLAlchemy
@@ -119,7 +119,7 @@ def create_tables():
 def handle_options():
     if request.method == "OPTIONS":
         response = jsonify({"message": "preflight"})
-        response.headers.add('Access-Control-Allow-Origin', 'http://127.0.0.1:3001')
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3001')
         response.headers.add('Access-Control-Allow-Credentials', 'true')
         response.headers.add('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
         response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization')
