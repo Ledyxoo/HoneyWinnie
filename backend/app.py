@@ -1,20 +1,49 @@
-import os
-from flask import Flask, request, jsonify
+from flask import Flask, jsonify, request, session
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime
 from flask_cors import CORS
+from authentification import auth_bp, db, login_manager, User
+from flask_login import login_required, LoginManager, login_user, logout_user, current_user
+from datetime import datetime
+import os
 
+# Initialiser l'application Flask
 app = Flask(__name__)
-CORS(app, resources={r"/logs": {"origins": "http://127.0.0.1:3001"}})
 
-# Database URL, updated to use psycopg3
+# Clé secrète pour signer les cookies de session
+app.secret_key = os.getenv('SECRET_KEY', 'your_secret_key')
+
+# Configuration du cookie de session
+app.config['SESSION_COOKIE_NAME'] = 'session'
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SECURE'] = False  # Mettez à True si vous utilisez HTTPS
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # Permet le partage de cookies cross-origin
+app.config['REMEMBER_COOKIE_DURATION'] = 60 * 60 * 24 * 7  # Durée du cookie "se souvenir de moi" (7 jours)
+
+# Configurer CORS pour permettre l'accès depuis http://127.0.0.1:3001
+CORS(app, resources={r"/auth/*": {"origins": "http://127.0.0.1:3001", "supports_credentials": True},
+                     r"/logs": {"origins": "http://127.0.0.1:3001", "supports_credentials": True}},
+     supports_credentials=True)
+
+# Configurer SQLAlchemy
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'postgresql+psycopg://user:password@db:5432/honeypot_db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# Initialize SQLAlchemy with Flask
-db = SQLAlchemy(app)
+# Initialiser les extensions
+db.init_app(app)
 
-# Define the MaliciousConnection model
+# Initialisation du gestionnaire de login
+login_manager = LoginManager()
+login_manager.init_app(app)
+
+# Enregistrer le blueprint d'authentification
+app.register_blueprint(auth_bp, url_prefix='/auth')
+
+# Définir le modèle User et la session
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
+# Modèle pour les connexions malveillantes
 class MaliciousConnection(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     ip_address = db.Column(db.String(120), nullable=False)
@@ -24,7 +53,20 @@ class MaliciousConnection(db.Model):
     def __repr__(self):
         return f'<MaliciousConnection {self.ip_address} at {self.timestamp}>'
 
-# Function to log malicious connections
+# Route principale
+@app.route('/')
+def home():
+    return "Welcome to the Honeypot!"
+
+# Route pour enregistrer une attaque malveillante
+@app.route('/malicious-attack', methods=['POST'])
+def malicious_attack():
+    ip = request.remote_addr  # Obtenir l'adresse IP du client
+    attack_type = request.form.get('attack_type', 'unknown')  # Obtenir le type d'attaque
+    log_malicious_connection(ip, attack_type)  # Enregistrer la connexion malveillante
+    return f"Attack logged: {attack_type} from {ip}"
+
+# Fonction pour enregistrer une connexion malveillante
 def log_malicious_connection(ip, attack_type):
     malicious_connection = MaliciousConnection(
         ip_address=ip,
@@ -33,24 +75,9 @@ def log_malicious_connection(ip, attack_type):
     db.session.add(malicious_connection)
     db.session.commit()
 
-# Function to create tables if they do not exist
-def create_tables():
-    with app.app_context():
-        db.create_all()  # Create all tables defined by SQLAlchemy models
-
-@app.route('/')
-def home():
-    return "Welcome to the Honeypot!"
-
-@app.route('/malicious-attack', methods=['POST'])
-def malicious_attack():
-    ip = request.remote_addr  # Get the IP address of the client
-    attack_type = request.form.get('attack_type', 'unknown')  # Get the attack type
-    log_malicious_connection(ip, attack_type)  # Log the malicious connection
-    return f"Attack logged: {attack_type} from {ip}"
-
 # Nouvelle route pour récupérer les logs en JSON
 @app.route('/logs', methods=['GET'])
+@login_required  # Cette route est protégée, il faut être authentifié pour y accéder
 def get_logs():
     # Récupérer tous les logs d'attaque
     logs = MaliciousConnection.query.all()
@@ -64,6 +91,39 @@ def get_logs():
     
     # Retourner les logs sous forme de JSON
     return jsonify({'logs': logs_list})
+
+# Route pour se déconnecter
+@app.route('/logout', methods=['POST'])
+def logout():
+    logout_user()  # Déconnecter l'utilisateur
+    return jsonify(message="Logout successful")
+
+@app.route('/auth/status', methods=['GET'])
+@login_required
+def check_status():
+    return jsonify(message="User is authenticated", user=current_user.username)
+
+# Fonction pour créer les tables si elles n'existent pas
+def create_tables():
+    with app.app_context():
+        db.create_all()
+        # Ajouter un utilisateur administrateur par défaut pour tester l'authentification
+        if not User.query.filter_by(username="admin").first():
+            admin = User(username="admin")
+            admin.set_password("password")
+            db.session.add(admin)
+            db.session.commit()
+
+# Gérer les requêtes OPTIONS
+@app.before_request
+def handle_options():
+    if request.method == "OPTIONS":
+        response = jsonify({"message": "preflight"})
+        response.headers.add('Access-Control-Allow-Origin', 'http://127.0.0.1:3001')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        response.headers.add('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+        return response
 
 if __name__ == "__main__":
     create_tables()  # Créer les tables avant de démarrer l'application
