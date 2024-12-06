@@ -6,7 +6,6 @@ WORKDIR /app
 
 # Copier les fichiers nécessaires
 COPY ./honeypot-frontend/ ./
-COPY ./honeypot-frontend/package*.json ./
 RUN npm install
 COPY . .
 
