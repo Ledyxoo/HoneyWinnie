@@ -15,7 +15,7 @@ app.secret_key = os.getenv('SECRET_KEY', 'your_secret_key')
 # Configuration du cookie de session
 app.config['SESSION_COOKIE_NAME'] = 'session'
 app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['SESSION_COOKIE_SECURE'] = False  # Mettez à True si vous utilisez HTTPS
+app.config['SESSION_COOKIE_SECURE'] = True  # Assure-toi que le cookie est sécurisé (uniquement en HTTPS)
 app.config['SESSION_COOKIE_SAMESITE'] = 'None'  # Permet le partage de cookies cross-origin
 app.config['REMEMBER_COOKIE_DURATION'] = 60 * 60 * 24 * 7  # Durée du cookie "se souvenir de moi" (7 jours)
 
