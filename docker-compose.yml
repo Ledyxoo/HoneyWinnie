@@ -1,6 +1,21 @@
-version: '3.8'
-
 services:
+  db:
+    image: postgres:13
+    environment:
+      - POSTGRES_DB=honeypot_db
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+    ports:
+      - "5432:5432"
+    networks:
+      - honeypot_network
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "user", "-d", "honeypot_db"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
+
   frontend:
     build:
       context: ./frontend
@@ -13,18 +28,20 @@ services:
     build:
       context: ./backend
     ports:
-      - "5000:5000"
-    depends_on:
-      - database
-
-  database:
-    image: postgres:14
+      - "127.0.0.1:5000:5000"
     environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: honeypot_db
+      - DB_HOST=db
+      - DB_NAME=honeypot_db
+      - DB_USER=user
+      - DB_PASSWORD=password
+    depends_on:
+      db:
+        condition: service_healthy
     volumes:
-      - db_data:/var/lib/postgresql/data
+      - ./backend:/app
+    networks:
+      - honeypot_network
 
-volumes:
-  db_data:
+networks:
+  honeypot_network:
+    driver: bridge
