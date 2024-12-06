@@ -1,3 +1,5 @@
+from collections import defaultdict
+from time import time
 from flask import Flask, jsonify, request, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
@@ -38,6 +40,10 @@ login_manager.init_app(app)
 # Enregistrer le blueprint d'authentification
 app.register_blueprint(auth_bp, url_prefix='/auth')
 
+# Suivi des requêtes POST
+request_tracker = defaultdict(list)
+blocked_ips = {}  # Dictionnaire pour stocker les IPs bloquées avec leur heure de déblocage
+
 # Définir le modèle User et la session
 @login_manager.user_loader
 def load_user(user_id):
@@ -53,10 +59,36 @@ class MaliciousConnection(db.Model):
     def __repr__(self):
         return f'<MaliciousConnection {self.ip_address} at {self.timestamp}>'
 
-# Route principale
-@app.route('/')
-def home():
-    return "Welcome to the Honeypot!"
+# Middleware pour détecter les attaques DDoS
+@app.before_request
+def detect_ddos():
+    ip = request.remote_addr  # Adresse IP du client
+    current_time = time()  # Temps actuel en secondes
+
+    # Vérifier si l'IP est bloquée
+    if ip in blocked_ips:
+        unblock_time = blocked_ips[ip]
+        if current_time < unblock_time:  # Si le délai de blocage n'est pas écoulé
+            return jsonify({"error": "IP blocked due to DDoS"}), 403
+        else:
+            del blocked_ips[ip]  # Débloquer l'IP après le délai
+
+    # Si la requête est POST
+    if request.method == "POST":
+        # Ajouter l'horodatage de la requête
+        request_tracker[ip].append(current_time)
+
+        # Garder uniquement les 10 dernières secondes
+        request_tracker[ip] = [
+            timestamp for timestamp in request_tracker[ip]
+            if current_time - timestamp <= 10
+        ]
+
+        # Si plus de 30 requêtes en 10 secondes
+        if len(request_tracker[ip]) > 30:
+            log_malicious_connection(ip, "DDoS detected")  # Enregistrer dans les logs
+            blocked_ips[ip] = current_time + 60  # Bloquer l'IP pour 60 secondes
+            return jsonify({"error": "DDoS detected, IP blocked"}), 429
 
 # Route pour enregistrer une attaque malveillante
 @app.route('/malicious-attack', methods=['POST'])
