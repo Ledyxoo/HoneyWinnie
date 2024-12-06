@@ -9,7 +9,10 @@ function App() {
   useEffect(() => {
     // Récupérer les logs depuis le backend
     axios.get('http://localhost:5000/logs')
-      .then(response => setLogs(response.data))
+      .then(response => {
+        // Les logs sont dans response.data.logs
+        setLogs(response.data.logs);
+      })
       .catch(error => console.error('Erreur lors de la récupération des logs', error));
   }, []);
 
@@ -27,7 +30,8 @@ function App() {
         <tbody>
           {logs.map((log, index) => (
             <tr key={index}>
-              <td>{log.timestamp}</td>
+              {/* Formater et afficher correctement la date et l'heure */}
+              <td>{new Date(log.timestamp).toLocaleString()}</td>
               <td>{log.ip_source}</td>
               <td>{log.attack_type}</td>
             </tr>
@@ -37,4 +41,5 @@ function App() {
     </div>
   );
 }
+
 export default App;
