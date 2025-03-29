@@ -126,7 +126,7 @@ Si vous souhaitez contribuer à ce projet :
 ---
 
 ## Auteurs
-- **Personne 1** : Développement Backend et Configuration de la Base de Données.
-- **Personne 2** : Développement Frontend et Orchestration Docker.
+- **Ledyxoo** : Développement Backend et Configuration de la Base de Données.
+- **noctune153** : Développement Frontend et Orchestration Docker.
 
 ---
